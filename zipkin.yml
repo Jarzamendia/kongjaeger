@@ -1,6 +1,7 @@
 version: '3.4'
 
 services:
+
   storage:
     image: openzipkin/zipkin-mysql
     networks:
@@ -11,11 +12,16 @@ services:
     environment:
       - STORAGE_TYPE=mysql
       - MYSQL_HOST=storage
-    ports:
-      - 9411:9411
-      # - 9410:9410
     networks:
       - proxy_net
+    deploy:
+      mode: replicated
+      labels:
+        - "traefik.frontend.entryPoints=http"
+        - "traefik.port=9411"
+        - "traefik.backend=zipkin"
+        - "traefik.frontend.rule=Host:zipkin.local"
+        - "traefik.docker.network=proxy_net"
 
   dependencies:
     image: openzipkin/zipkin-dependencies
@@ -41,8 +47,6 @@ services:
 
   grafana:
     image: grafana/grafana
-    ports:
-      - 3000:3000
     depends_on:
       - prometheus
     environment:
@@ -50,6 +54,14 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     networks:
       - proxy_net
+    deploy:
+      mode: replicated
+      labels:
+        - "traefik.frontend.entryPoints=http"
+        - "traefik.port=3000"
+        - "traefik.backend=grafana"
+        - "traefik.frontend.rule=Host:grafana.local"
+        - "traefik.docker.network=proxy_net"
 
   setup_grafana_datasource:
     image: appropriate/curl
@@ -58,6 +70,9 @@ services:
     command: /create.sh
     networks:
       - proxy_net
+    deploy:
+      restart_policy:
+        condition: on-failure
 
 networks:
   proxy_net:

@@ -12,13 +12,6 @@ services:
     environment:
       POSTGRES_USER: kong
       POSTGRES_DB: kong
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "kong"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   #######################################
   # Kong database migration
@@ -51,11 +44,14 @@ services:
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_ERROR_LOG: /dev/stderr
-
-    ports:
-      - "8001:8001"
-      - "8002:8000"
-
+    deploy:
+      mode: replicated
+      labels:
+        - "traefik.frontend.entryPoints=http"
+        - "traefik.port=8000"
+        - "traefik.backend=kong"
+        - "traefik.frontend.rule=Host:kong.local"
+        - "traefik.docker.network=proxy_net"
   #######################################
   # Konga database prepare
   #######################################
@@ -82,9 +78,16 @@ services:
       TOKEN_SECRET: km1GUr4RkcQD7DewhJPNXrCuZwcKmqjb
       DB_DATABASE: konga_db
       NODE_ENV: production
-    ports:
-      - "1337:1337"
+    deploy:
+      mode: replicated
+      labels:
+        - "traefik.frontend.entryPoints=http"
+        - "traefik.port=1337"
+        - "traefik.backend=konga"
+        - "traefik.frontend.rule=Host:konga.local"
+        - "traefik.docker.network=proxy_net"
 
+      
 networks:
   proxy_net:
     external: true

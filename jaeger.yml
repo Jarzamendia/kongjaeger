@@ -8,12 +8,6 @@ services:
         - "--cassandra.keyspace=jaeger_v1_dc1"
         - "--cassandra.servers=cassandra"
         - "--collector.zipkin.http-port=9411"
-      ports:
-        - "14269:14269"
-        - "14268:14268"
-        - "14267:14267"
-        - "14250:14250"
-        - "9411:9411"
       networks:
         - proxy_net
 
@@ -22,21 +16,21 @@ services:
       command: 
         - "--cassandra.keyspace=jaeger_v1_dc1"
         - "--cassandra.servers=cassandra"
-      ports:
-        - "16686:16686"
-        - "16687:16687"
       networks:
         - proxy_net
+      deploy:
+        mode: replicated
+        labels:
+          - "traefik.frontend.entryPoints=http"
+          - "traefik.port=16686"
+          - "traefik.backend=jaeger-query"
+          - "traefik.frontend.rule=Host:jaeger-query.local"
+          - "traefik.docker.network=proxy_net"
 
     jaeger-agent:
       image: jaegertracing/jaeger-agent
       command: 
         - "--reporter.grpc.host-port=jaeger-collector:14250"
-      ports:
-        - "5775:5775/udp"
-        - "6831:6831/udp"
-        - "6832:6832/udp"
-        - "5778:5778"
       networks:
         - proxy_net
 

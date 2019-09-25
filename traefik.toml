@@ -35,13 +35,25 @@ exposedByDefault = true
   [entryPoints.traefik]
   address = ":8082"
 
+#[tracing]
+#  backend = "jaeger"
+#  serviceName = "traefik"
+#  spanNameLimit = 0
+#  [tracing.jaeger]
+#    samplingServerURL = "http://jaeger-agent:5778/sampling"
+#    samplingType = "const"
+#    samplingParam = 1.0
+#    localAgentHostPort = "jaeger-agent:6831"
+#    traceContextHeaderName = "uber-trace-id"
+
 [tracing]
-  backend = "jaeger"
-  serviceName = "traefik"
-  spanNameLimit = 0
-  [tracing.jaeger]
-    samplingServerURL = "http://jaeger-agent:5778/sampling"
-    samplingType = "const"
-    samplingParam = 1.0
-    localAgentHostPort = "jaeger-agent:6831"
-    traceContextHeaderName = "uber-trace-id"
+  backend = "zipkin"
+
+ serviceName = "traefik"
+  spanNameLimit = 150
+
+  [tracing.zipkin]
+    httpEndpoint = "http://zipkin:9411/api/v1/spans"
+    debug = true
+    sameSpan = false
+    id128Bit = true
