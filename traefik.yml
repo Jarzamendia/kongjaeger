@@ -1,0 +1,28 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: traefik:v1.7.15-alpine
+    command:
+      - "--configfile=/etc/traefik/traefik.toml"
+    ports:
+      - "80:80"
+      - "8082:8082"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.toml:/etc/traefik/traefik.toml
+    networks:
+      - proxy_net
+    deploy:
+      mode: global
+      labels:
+        - "traefik.frontend.entryPoints=http"
+        - "traefik.port=8082"
+        - "traefik.backend=traefik"
+        - "traefik.frontend.rule=Host:traefik.local"
+        - "traefik.docker.network=proxy_net"
+
+networks:
+  proxy_net:
+    external: true

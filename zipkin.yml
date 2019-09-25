@@ -1,0 +1,64 @@
+version: '3.4'
+
+services:
+  storage:
+    image: openzipkin/zipkin-mysql
+    networks:
+      - proxy_net
+
+  zipkin:
+    image: openzipkin/zipkin
+    environment:
+      - STORAGE_TYPE=mysql
+      - MYSQL_HOST=storage
+    ports:
+      - 9411:9411
+      # - 9410:9410
+    networks:
+      - proxy_net
+
+  dependencies:
+    image: openzipkin/zipkin-dependencies
+    entrypoint: crond -f
+    environment:
+      - STORAGE_TYPE=mysql
+      - MYSQL_HOST=storage
+      - MYSQL_USER=zipkin
+      - MYSQL_PASS=zipkin
+    networks:
+      - proxy_net
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    depends_on:
+      - storage
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - proxy_net
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    networks:
+      - proxy_net
+
+  setup_grafana_datasource:
+    image: appropriate/curl
+    volumes:
+      - ./create-datasource-and-dashboard.sh:/create.sh:ro
+    command: /create.sh
+    networks:
+      - proxy_net
+
+networks:
+  proxy_net:
+    external: true
